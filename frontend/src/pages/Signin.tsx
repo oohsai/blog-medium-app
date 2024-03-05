@@ -1,7 +1,7 @@
 import { Auth } from "../components/Auth";
 import { Quote } from "../components/Quote";
 
-export default function Signin() {
+export const Signin = () => {
   return (
     <div>
       <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -14,4 +14,4 @@ export default function Signin() {
       </div>
     </div>
   );
-}
+};
