@@ -14,18 +14,20 @@ export const blogRouter = new Hono<{
   };
 }>();
 
-const mysecret = "123";
-
 blogRouter.use("/*", async (c, next) => {
   const authHeader = c.req.header("authorization") || "";
-  const user = await verify(authHeader, mysecret);
-  if (user) {
-    c.set("userId", user.id);
-    await next();
-  } else {
-    return c.json({
-      message: "You are not logged in",
-    });
+  try {
+    const user = await verify(authHeader, c.env.JWT_SECRET);
+    if (user) {
+      c.set("userId", user.id);
+      await next();
+    } else {
+      return c.json({
+        message: "You are not logged in",
+      });
+    }
+  } catch (error) {
+    return c.json(404);
   }
 });
 
@@ -90,7 +92,18 @@ blogRouter.get("/bulk", async (c) => {
     datasourceUrl: c.env?.DATABASE_URL,
   }).$extends(withAccelerate());
 
-  const allBlog = await prisma.blog.findMany();
+  const allBlog = await prisma.blog.findMany({
+    select: {
+      content: true,
+      title: true,
+      id: true,
+      author: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
   return c.json({ allBlog });
 });
 
@@ -103,6 +116,16 @@ blogRouter.get("/:id", async (c) => {
     const getBlog = await prisma.blog.findFirst({
       where: {
         id: Number(id),
+      },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        author: {
+          select: {
+            name: true,
+          },
+        },
       },
     });
     if (!getBlog) {
